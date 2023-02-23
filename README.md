@@ -2,6 +2,7 @@
 
 - Two ESP32 boards: Master and Slave
 - Boards to be configured to use Wi-fi AP through Web Interface
+- Boards addresses to be configured through Web Interface
 - Wi-Fi Confirguration could be changed any time
 - Boards use ESP-NOW for communication
 - Slave reads data from HID reader and sends to Master over Wi-Fi
