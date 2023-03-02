@@ -9,45 +9,21 @@
 #include <ArduinoJson.h>          //https://github.com/bblanchon/ArduinoJson
 
 //weigand reader
-#define MAX_BITS 100                 // max number of bits 
-#define WEIGAND_WAIT_TIME  3000      // time to wait for another weigand pulse.  
 
-unsigned char databits[MAX_BITS];    // stores all of the data bits
-unsigned char bitCount;              // number of bits currently captured
-unsigned char flagDone;              // goes low when data is currently being captured
-unsigned int weigand_counter;        // countdown until we assume there are no more bits
-
-void ISR_INT0() {
-  // Serial.print("0");   // uncomment this line to display raw binary
-  bitCount++;
-  flagDone = 0;
-  weigand_counter = WEIGAND_WAIT_TIME;
-
-}
-
-// interrupt that happens when INT1 goes low (1 bit)
-void ISR_INT1() {
-  //Serial.print("1");   // uncomment this line to display raw binary
-  databits[bitCount] = 1;
-  bitCount++;
-  flagDone = 0;
-  weigand_counter = WEIGAND_WAIT_TIME;
-}
 //wegand reader
 //define your default values here, if there are different values in config.json, they are overwritten.
 
-char station_id[6] = "FFFF";
+char reader_id[6] = "FFFF";
 char api_token[34] = "YOUR_API_TOKEN";
-char grant_time[2] = "1";
-char deny_time[2] = "5";
+
 
 //flag for saving data
 bool shouldSaveConfig = false;
 
-//Wiegand Bits to send
+//Wiegand Bits to recieve
 uint64_t UID = 8589934592LL;
 
-// Define variables to store incoming readings
+//Structure example to send data
 int incomingGRANT;
 int incomingDENY;
 
@@ -55,7 +31,6 @@ int incomingDENY;
 String success;
 
 //Structure example to send data
-//Must match the receiver structure
 typedef struct struct_message {
   int GRANT;
   int DENY;
@@ -67,7 +42,7 @@ typedef struct test_struct {
 test_struct test;
 
 // Create a struct_message to hold incoming sensor readings
-struct_message incomingReadings;
+test_struct incomingReadings;
 
 esp_now_peer_info_t peerInfo;
 
@@ -88,8 +63,7 @@ void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
   memcpy(&incomingReadings, incomingData, sizeof(incomingReadings));
   Serial.print("Bytes received: ");
   Serial.println(len);
-  incomingGRANT = incomingReadings.GRANT;
-  incomingDENY = incomingReadings.DENY;
+  UID = incomingReadings.x;
 }
 
 //callback notifying us of the need to save config
@@ -99,8 +73,8 @@ void saveConfigCallback () {
 }
 
 void setup() {
-  pinMode(34, INPUT);     // DATA0 (INT0)
-  pinMode(35, INPUT);     // DATA1 (INT1)
+  pinMode(32, OUTPUT);     // DATA0 (INT0)
+  pinMode(33, OUTPUT);     // DATA1 (INT1)
   pinMode(18, OUTPUT);
   pinMode(17, OUTPUT);
   pinMode(16, OUTPUT);
@@ -145,10 +119,8 @@ void setup() {
 #endif
           Serial.println("\nparsed json");
 
-          strcpy(station_id, json["station_id"]);
+          strcpy(reader_id, json["reader_id"]);
           strcpy(api_token, json["api_token"]);
-          strcpy(api_token, json["grant_time"]);
-          strcpy(api_token, json["deny_time"]);
         } else {
           Serial.println("failed to load json config");
         }
@@ -164,10 +136,9 @@ void setup() {
   // After connecting, parameter.getValue() will get you the configured value
   // id/name placeholder/prompt default length
 
-  WiFiManagerParameter custom_station_id("station_id", "Station ID", station_id, 6);
+  WiFiManagerParameter custom_reader_id("reader_id", "Reader ID", reader_id, 6);
   WiFiManagerParameter custom_api_token("apikey", "API token", api_token, 32);
-  WiFiManagerParameter custom_grant_time("grant_time", "Access Granted (sec)", grant_time, 2);
-  WiFiManagerParameter custom_deny_time("deny_time", "Access Denied (sec)", deny_time, 2);
+
 
   //WiFiManager
   //Local intialization. Once its business is done, there is no need to keep it around
@@ -180,10 +151,9 @@ void setup() {
   wifiManager.setSTAStaticIPConfig(IPAddress(10, 0, 1, 99), IPAddress(10, 0, 1, 1), IPAddress(255, 255, 255, 0));
 
   //add all your parameters here
-  wifiManager.addParameter(&custom_station_id);
+  wifiManager.addParameter(&custom_reader_id);
   wifiManager.addParameter(&custom_api_token);
-  wifiManager.addParameter(&custom_grant_time);
-  wifiManager.addParameter(&custom_deny_time);
+
 
   //reset settings - for testing
   //wifiManager.resetSettings();
@@ -201,7 +171,7 @@ void setup() {
   Serial.println(BoardId);
   BoardId = BoardId.substring(12);
   BoardId.remove(2, 1);
-  BoardId = "Reader_" + BoardId;
+  BoardId = "Station_" + BoardId;
 
   BoardId.toCharArray(buf1, BoardId.length() + 1);
   Serial.println(buf1);
@@ -221,15 +191,13 @@ void setup() {
   Serial.println("connected...yeey :)");
 
   //read updated parameters
-  strcpy(station_id, custom_station_id.getValue());
+  strcpy(reader_id, custom_reader_id.getValue());
   strcpy(api_token, custom_api_token.getValue());
-  strcpy(grant_time, custom_grant_time.getValue());
-  strcpy(deny_time, custom_deny_time.getValue());
+
   Serial.println("The values in the file are: ");
-  Serial.println("\tstation_id : " + String(station_id));
+  Serial.println("\treader_id : " + String(reader_id));
   Serial.println("\tapi_token : " + String(api_token));
-  Serial.println("\tgrant_time : " + String(grant_time));
-  Serial.println("\tdeny_time : " + String(deny_time));
+
 
   //save the custom parameters to FS
   if (shouldSaveConfig) {
@@ -240,7 +208,7 @@ void setup() {
     DynamicJsonBuffer jsonBuffer;
     JsonObject& json = jsonBuffer.createObject();
 #endif
-    json["station_id"] = station_id;
+    json["reader_id"] = reader_id;
     json["api_token"] = api_token;
 
     File configFile = SPIFFS.open("/config.json", "w");
@@ -290,44 +258,14 @@ void setup() {
   // Register for a callback function that will be called when data is received
   esp_now_register_recv_cb(OnDataRecv);
 
-  // binds the ISR functions to the falling edge of INTO and INT1
-  attachInterrupt(0, ISR_INT0, FALLING);
-  attachInterrupt(1, ISR_INT1, FALLING);
 
-
-  weigand_counter = WEIGAND_WAIT_TIME;
 }
 
 
 void loop() {
   digitalWrite(16, LOW); // turn the LED off
   // This waits to make sure that there have been no more data pulses before processing data
-  if (!flagDone) {
-    if (--weigand_counter == 0)
-      flagDone = 1;
-  }
-  // Read Weigand Data
-
-  if (bitCount > 0 && flagDone) {
-    unsigned char i;
-    if (bitCount > 10) {
-      for (i = 0; i < bitCount; i++) {
-        UID <<= 1;
-        UID |= databits[i];
-      }
-
-      print_uint64_t(UID);
-    }
-
-
-    // cleanup and get ready for the next card
-    bitCount = 0;
-    UID = 0;
-    for (i = 0; i < MAX_BITS; i++)
-    {
-      databits[i] = 0;
-    }
-  }
+ 
 }
 
 void print_uint64_t(uint64_t num) {
