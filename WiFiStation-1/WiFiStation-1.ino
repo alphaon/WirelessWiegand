@@ -13,10 +13,12 @@
 //wegand reader
 //define your default values here, if there are different values in config.json, they are overwritten.
 
-char reader_id[6] = "FFFF";
+char reader_id[6] = "7AB8";
 char api_token[34] = "YOUR_API_TOKEN";
 
-
+    //Broadcast address
+  uint8_t broadcastAddress[] = {0xE8, 0x68, 0xE7, 0x2E, 0xFF, 0xFF};
+  
 //flag for saving data
 bool shouldSaveConfig = false;
 
@@ -24,8 +26,8 @@ bool shouldSaveConfig = false;
 uint64_t UID = 8589934592LL;
 
 //Structure example to send data
-int incomingGRANT;
-int incomingDENY;
+int outcomingGRANT;
+int outcomingDENY;
 
 // Variable to store if sending data was successful
 String success;
@@ -35,6 +37,8 @@ typedef struct struct_message {
   int GRANT;
   int DENY;
 } struct_message;
+
+struct_message Trigger;
 
 typedef struct test_struct {
   uint64_t x = 8589934592LL;;
@@ -64,6 +68,7 @@ void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
   Serial.print("Bytes received: ");
   Serial.println(len);
   UID = incomingReadings.x;
+
 }
 
 //callback notifying us of the need to save config
@@ -75,6 +80,8 @@ void saveConfigCallback () {
 void setup() {
   pinMode(32, OUTPUT);     // DATA0 (INT0)
   pinMode(33, OUTPUT);     // DATA1 (INT1)
+  pinMode(34, INPUT);     // GRANT TRIGGER
+  pinMode(35, INPUT);     // DENY TRIGGER
   pinMode(18, OUTPUT);
   pinMode(17, OUTPUT);
   pinMode(16, OUTPUT);
@@ -231,7 +238,7 @@ void setup() {
   Serial.println(WiFi.localIP());
   digitalWrite(18, LOW); // turn the LED off
 
-  
+
   // Init ESP-NOW
   if (esp_now_init() != ESP_OK) {
     Serial.println("Error initializing ESP-NOW");
@@ -241,8 +248,7 @@ void setup() {
   // get the status of Trasnmitted packet
   esp_now_register_send_cb(OnDataSent);
 
-  //Broadcast address
-  uint8_t broadcastAddress[] = {0xE8, 0x68, 0xE7, 0x2E, 0xFF, 0xFF};
+
 
   // Register peer
   memcpy(peerInfo.peer_addr, broadcastAddress, 6);
@@ -254,7 +260,7 @@ void setup() {
     Serial.println("Failed to add peer");
     return;
   }
-    digitalWrite(17, LOW); // turn the LED off
+  digitalWrite(17, LOW); // turn the LED off
   // Register for a callback function that will be called when data is received
   esp_now_register_recv_cb(OnDataRecv);
 
@@ -265,7 +271,23 @@ void setup() {
 void loop() {
   digitalWrite(16, LOW); // turn the LED off
   // This waits to make sure that there have been no more data pulses before processing data
- 
+outcomingGRANT=digitalRead(34);
+outcomingDENY=digitalRead(35);
+if (outcomingGRANT == HIGH || outcomingDENY==HIGH)
+{
+Trigger.GRANT=outcomingGRANT;
+Trigger.DENY=outcomingDENY;
+// Send message via ESP-NOW
+  esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *) &Trigger, sizeof(Trigger));
+   
+  if (result == ESP_OK) {
+    Serial.println("Sent with success");
+  }
+  else {
+    Serial.println("Error sending the data");
+  }
+
+}
 }
 
 void print_uint64_t(uint64_t num) {

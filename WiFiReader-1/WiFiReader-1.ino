@@ -36,7 +36,7 @@ void ISR_INT1() {
 //wegand reader
 //define your default values here, if there are different values in config.json, they are overwritten.
 
-char station_id[6] = "FFFF";
+char station_id[6] = "8524";
 char api_token[34] = "YOUR_API_TOKEN";
 char grant_time[2] = "1";
 char deny_time[2] = "5";
