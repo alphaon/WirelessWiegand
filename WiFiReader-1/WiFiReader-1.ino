@@ -263,7 +263,7 @@ void setup() {
   Serial.println(WiFi.localIP());
   digitalWrite(18, LOW); // turn the LED off
 
-  
+
   // Init ESP-NOW
   if (esp_now_init() != ESP_OK) {
     Serial.println("Error initializing ESP-NOW");
@@ -274,7 +274,20 @@ void setup() {
   esp_now_register_send_cb(OnDataSent);
 
   //Broadcast address
-  uint8_t broadcastAddress[] = {0xE8, 0x68, 0xE7, 0x2E, 0xFF, 0xFF};
+  String id(station_id);
+  String onepair = id.substring(2);
+  id.remove(2, 2);
+  char oo[3];
+  char bb[3];
+  onepair.toCharArray(oo, onepair.length() + 1);
+  id.toCharArray(bb, id.length() + 1);
+  uint8_t opair = StrToHex(oo);
+  uint8_t spair = StrToHex (bb);
+  uint8_t broadcastAddress[] = {0xE8, 0x68, 0xE7, 0x2E, spair, opair};
+  Serial.println("Pair MAC 1 DEC: ");
+  Serial.println(spair);
+  Serial.println("Pair MAC 2 DEC: ");
+  Serial.println(opair);
 
   // Register peer
   memcpy(peerInfo.peer_addr, broadcastAddress, 6);
@@ -286,7 +299,7 @@ void setup() {
     Serial.println("Failed to add peer");
     return;
   }
-    digitalWrite(17, LOW); // turn the LED off
+  digitalWrite(17, LOW); // turn the LED off
   // Register for a callback function that will be called when data is received
   esp_now_register_recv_cb(OnDataRecv);
 
@@ -296,6 +309,8 @@ void setup() {
 
 
   weigand_counter = WEIGAND_WAIT_TIME;
+
+
 }
 
 
@@ -346,4 +361,8 @@ void print_uint64_t(uint64_t num) {
 
 
   }
+}
+int StrToHex(char str[])
+{
+  return (int) strtol(str, 0, 16);
 }

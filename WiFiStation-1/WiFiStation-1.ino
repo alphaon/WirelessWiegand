@@ -155,7 +155,7 @@ void setup() {
   wifiManager.setSaveConfigCallback(saveConfigCallback);
 
   //set static ip
-  wifiManager.setSTAStaticIPConfig(IPAddress(10, 0, 1, 99), IPAddress(10, 0, 1, 1), IPAddress(255, 255, 255, 0));
+  wifiManager.setSTAStaticIPConfig(IPAddress(10, 0, 1, 100), IPAddress(10, 0, 1, 1), IPAddress(255, 255, 255, 0));
 
   //add all your parameters here
   wifiManager.addParameter(&custom_reader_id);
@@ -248,7 +248,20 @@ void setup() {
   // get the status of Trasnmitted packet
   esp_now_register_send_cb(OnDataSent);
 
-
+  String id(reader_id);
+  String onepair = id.substring(2);
+  id.remove(2, 2);
+  char oo[3];
+  char bb[3];
+  onepair.toCharArray(oo, onepair.length() + 1);
+  id.toCharArray(bb, id.length() + 1);
+  uint8_t opair = StrToHex(oo);
+  uint8_t spair = StrToHex (bb);
+  uint8_t broadcastAddress[] = {0xE8, 0x68, 0xE7, 0x2E, spair, opair};
+  Serial.println("Pair MAC 1 DEC: ");
+  Serial.println(spair);
+  Serial.println("Pair MAC 2 DEC: ");
+  Serial.println(opair);
 
   // Register peer
   memcpy(peerInfo.peer_addr, broadcastAddress, 6);
@@ -269,7 +282,7 @@ void setup() {
 
 
 void loop() {
-  digitalWrite(16, LOW); // turn the LED off
+
   // This waits to make sure that there have been no more data pulses before processing data
 outcomingGRANT=digitalRead(34);
 outcomingDENY=digitalRead(35);
@@ -277,6 +290,7 @@ if (outcomingGRANT == HIGH || outcomingDENY==HIGH)
 {
 Trigger.GRANT=outcomingGRANT;
 Trigger.DENY=outcomingDENY;
+digitalWrite(16, HIGH); // turn the LED on
 // Send message via ESP-NOW
   esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *) &Trigger, sizeof(Trigger));
    
@@ -287,6 +301,9 @@ Trigger.DENY=outcomingDENY;
     Serial.println("Error sending the data");
   }
 
+}else if (outcomingGRANT == LOW && outcomingDENY==LOW)
+{
+  digitalWrite(16, LOW); // turn the LED off  
 }
 }
 
@@ -306,4 +323,8 @@ void print_uint64_t(uint64_t num) {
 
 
   }
+}
+int StrToHex(char str[])
+{
+  return (int) strtol(str, 0, 16);
 }
