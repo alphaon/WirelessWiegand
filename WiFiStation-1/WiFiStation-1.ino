@@ -29,6 +29,9 @@ uint64_t UID = 8589934592LL;
 int outcomingGRANT;
 int outcomingDENY;
 
+//Settings Reset Trigger
+int Settings;
+
 // Variable to store if sending data was successful
 String success;
 
@@ -82,6 +85,7 @@ void setup() {
   pinMode(33, OUTPUT);     // DATA1 (INT1)
   pinMode(34, INPUT);     // GRANT TRIGGER
   pinMode(35, INPUT);     // DENY TRIGGER
+  pinMode(39,INPUT); // Settings Reset
   pinMode(18, OUTPUT);
   pinMode(17, OUTPUT);
   pinMode(16, OUTPUT);
@@ -163,8 +167,11 @@ void setup() {
 
 
   //reset settings - for testing
-  //wifiManager.resetSettings();
-
+  Settings=digitalRead(39);
+  if (Settings==HIGH)
+  {
+  wifiManager.resetSettings();
+  }
   //set minimu quality of signal so it ignores AP's under that quality
   //defaults to 8%
   //wifiManager.setMinimumSignalQuality(50);
