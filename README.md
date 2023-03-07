@@ -5,8 +5,8 @@
 - :white_check_mark: Boards addresses to be configured through Web Interface
 - :white_check_mark: Wi-Fi Confirguration could be changed any time by pressing a button
 - :ballot_box_with_check: Boards use ESP-NOW for communication
-- :ballot_box_with_check: Slave reads data from HID reader and sends to Master over Wi-Fi
-- :ballot_box_with_check: Master gets data packet and send received data to Third Party Device (TPD) over wire (D1,D0)
+- :ballot_box_with_check: Slave reads data from Wiegand reader and sends to Master over Wi-Fi
+- :ballot_box_with_check: Master gets data packet and send received data to Third Party Device (TPD) over wire (D1,D0) (Wiegand 26/40)
 - :ballot_box_with_check: Master gets response from TPD over wire (Beep, LED)
 - :ballot_box_with_check: Master sends response over Wi-Fi to slave
 - :ballot_box_with_check: Slave gets response and activate Beeper or/and LED
