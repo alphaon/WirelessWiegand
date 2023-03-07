@@ -212,7 +212,7 @@ void setup() {
   Serial.println(BoardId);
   BoardId = BoardId.substring(12);
   BoardId.remove(2, 1);
-  BoardId = "Reader_" + BoardId;
+  BoardId = "Reader ID" + BoardId;
 
   BoardId.toCharArray(buf1, BoardId.length() + 1);
   Serial.println(buf1);

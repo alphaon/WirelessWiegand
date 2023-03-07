@@ -185,7 +185,7 @@ void setup() {
   Serial.println(BoardId);
   BoardId = BoardId.substring(12);
   BoardId.remove(2, 1);
-  BoardId = "Station_" + BoardId;
+  BoardId = "Station ID" + BoardId;
 
   BoardId.toCharArray(buf1, BoardId.length() + 1);
   Serial.println(buf1);
@@ -298,6 +298,7 @@ if (outcomingGRANT == HIGH || outcomingDENY==HIGH)
 Trigger.GRANT=outcomingGRANT;
 Trigger.DENY=outcomingDENY;
 digitalWrite(16, HIGH); // turn the LED on
+delay (1000);
 // Send message via ESP-NOW
   esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *) &Trigger, sizeof(Trigger));
    
