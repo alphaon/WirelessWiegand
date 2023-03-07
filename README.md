@@ -15,4 +15,4 @@
 - :white_check_mark: Activation time of GRANT and DENY activity could be configured in Web
 - :ballot_box_with_check: OTA firmware update
 </br>
-:white_check_mark: - Verified,  :ballot_box_with_check: - Need verification, &#9744; - Not implemented yet
+:white_check_mark: - Works,  :ballot_box_with_check: - Needs test, &#9744; - Not implemented yet
