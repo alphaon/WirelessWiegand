@@ -16,9 +16,9 @@
 char reader_id[6] = "7AB8";
 char api_token[34] = "YOUR_API_TOKEN";
 
-    //Broadcast address
-  uint8_t broadcastAddress[] = {0xE8, 0x68, 0xE7, 0x2E, 0xFF, 0xFF};
-  
+//Broadcast address
+uint8_t broadcastAddress[] = {0xE8, 0x68, 0xE7, 0x2E, 0xFF, 0xFF};
+
 //flag for saving data
 bool shouldSaveConfig = false;
 
@@ -31,6 +31,9 @@ int outcomingDENY;
 
 //Settings Reset Trigger
 int Settings;
+
+//Format FS
+int Format;
 
 // Variable to store if sending data was successful
 String success;
@@ -85,7 +88,8 @@ void setup() {
   pinMode(33, OUTPUT);     // DATA1 (INT1)
   pinMode(34, INPUT);     // GRANT TRIGGER
   pinMode(35, INPUT);     // DENY TRIGGER
-  pinMode(39,INPUT); // Settings Reset
+  pinMode(39, INPUT); // Settings Reset
+  pinMode(36, INPUT); // Format FS
   pinMode(18, OUTPUT);
   pinMode(17, OUTPUT);
   pinMode(16, OUTPUT);
@@ -98,7 +102,13 @@ void setup() {
   Serial.println();
 
   //clean FS, for testing
-  //SPIFFS.format();
+  Format = digitalRead(36);
+  if (Format == HIGH)
+  {
+    Serial.println("Formatting FS...");
+    SPIFFS.format();
+
+  }
 
   //read configuration from FS json
   Serial.println("mounting FS...");
@@ -167,10 +177,12 @@ void setup() {
 
 
   //reset settings - for testing
-  Settings=digitalRead(39);
-  if (Settings==HIGH)
+  Settings = digitalRead(39);
+  if (Settings == HIGH)
   {
-  wifiManager.resetSettings();
+    Serial.println("W-Fi Resetting...");
+    wifiManager.resetSettings();
+
   }
   //set minimu quality of signal so it ignores AP's under that quality
   //defaults to 8%
@@ -291,28 +303,28 @@ void setup() {
 void loop() {
 
   // This waits to make sure that there have been no more data pulses before processing data
-outcomingGRANT=digitalRead(34);
-outcomingDENY=digitalRead(35);
-if (outcomingGRANT == HIGH || outcomingDENY==HIGH)
-{
-Trigger.GRANT=outcomingGRANT;
-Trigger.DENY=outcomingDENY;
-digitalWrite(16, HIGH); // turn the LED on
-delay (1000);
-// Send message via ESP-NOW
-  esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *) &Trigger, sizeof(Trigger));
-   
-  if (result == ESP_OK) {
-    Serial.println("Sent with success");
-  }
-  else {
-    Serial.println("Error sending the data");
-  }
+  outcomingGRANT = digitalRead(34);
+  outcomingDENY = digitalRead(35);
+  if (outcomingGRANT == HIGH || outcomingDENY == HIGH)
+  {
+    Trigger.GRANT = outcomingGRANT;
+    Trigger.DENY = outcomingDENY;
+    digitalWrite(16, HIGH); // turn the LED on
+    delay (1000);
+    // Send message via ESP-NOW
+    esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *) &Trigger, sizeof(Trigger));
 
-}else if (outcomingGRANT == LOW && outcomingDENY==LOW)
-{
-  digitalWrite(16, LOW); // turn the LED off  
-}
+    if (result == ESP_OK) {
+      Serial.println("Sent with success");
+    }
+    else {
+      Serial.println("Error sending the data");
+    }
+
+  } else if (outcomingGRANT == LOW && outcomingDENY == LOW)
+  {
+    digitalWrite(16, LOW); // turn the LED off
+  }
 }
 
 void print_uint64_t(uint64_t num) {

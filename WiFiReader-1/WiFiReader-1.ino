@@ -57,6 +57,9 @@ String success;
 //Settings Reset Trigger
 int Settings;
 
+//Format FS
+int Format;
+
 //Structure example to send data
 //Must match the receiver structure
 typedef struct struct_message {
@@ -93,7 +96,7 @@ void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
   Serial.println(len);
   incomingGRANT = incomingReadings.GRANT;
   incomingDENY = incomingReadings.DENY;
-  
+
 }
 
 //callback notifying us of the need to save config
@@ -105,8 +108,9 @@ void saveConfigCallback () {
 void setup() {
   pinMode(34, INPUT);     // DATA0 (INT0)
   pinMode(35, INPUT);     // DATA1 (INT1)
-  pinMode(39,INPUT); // Settings Reset
-//LEDS
+  pinMode(39, INPUT); // Settings Reset
+  pinMode(36, INPUT); // Format FS
+  //LEDS
   pinMode(18, OUTPUT); //GREEN
   pinMode(17, OUTPUT); //RED
   pinMode(16, OUTPUT); // YELLOW
@@ -120,8 +124,15 @@ void setup() {
   Serial.println();
 
   //clean FS, for testing
-  //SPIFFS.format();
 
+  Format = digitalRead(36);
+  if (Format == HIGH)
+  {
+
+    Serial.println("Formatting FS...");
+    SPIFFS.format();
+
+  }
   //read configuration from FS json
   Serial.println("mounting FS...");
 
@@ -193,10 +204,12 @@ void setup() {
   wifiManager.addParameter(&custom_deny_time);
 
   //reset settings - for testing
-  Settings=digitalRead(39);
-  if (Settings==HIGH)
+  Settings = digitalRead(39);
+  if (Settings == HIGH)
   {
-  wifiManager.resetSettings();
+
+    Serial.println("W-Fi Resetting...");
+    wifiManager.resetSettings();
   }
 
   //set minimu quality of signal so it ignores AP's under that quality
@@ -327,23 +340,23 @@ void setup() {
 
 void loop() {
   digitalWrite(16, LOW); // turn the LED off
-if (incomingGRANT==HIGH)
-{
-  digitalWrite(18, HIGH); // turn the LED on
-  digitalWrite(21, HIGH); //turn the BEEPER
-  delay(atoi(grant_time)*1000);
-   digitalWrite(18, LOW); // turn the LED on
-  digitalWrite(21, LOW); //turn the BEEPER 
-  incomingGRANT=LOW;
-}else if (incomingDENY==HIGH)
-{
-   digitalWrite(16, HIGH); // turn the LED on
-  digitalWrite(21, HIGH); //turn the BEEPER
-  delay(atoi(deny_time)*1000);
-   digitalWrite(16, LOW); // turn the LED on
-  digitalWrite(21, LOW); //turn the BEEPER 
-  incomingDENY=LOW; 
-}
+  if (incomingGRANT == HIGH)
+  {
+    digitalWrite(18, HIGH); // turn the LED on
+    digitalWrite(21, HIGH); //turn the BEEPER
+    delay(atoi(grant_time) * 1000);
+    digitalWrite(18, LOW); // turn the LED on
+    digitalWrite(21, LOW); //turn the BEEPER
+    incomingGRANT = LOW;
+  } else if (incomingDENY == HIGH)
+  {
+    digitalWrite(16, HIGH); // turn the LED on
+    digitalWrite(21, HIGH); //turn the BEEPER
+    delay(atoi(deny_time) * 1000);
+    digitalWrite(16, LOW); // turn the LED on
+    digitalWrite(21, LOW); //turn the BEEPER
+    incomingDENY = LOW;
+  }
   // This waits to make sure that there have been no more data pulses before processing data
   if (!flagDone) {
     if (--weigand_counter == 0)
