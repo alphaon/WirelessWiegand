@@ -307,7 +307,7 @@ void setup() {
   id.toCharArray(bb, id.length() + 1);
   uint8_t opair = StrToHex(oo);
   uint8_t spair = StrToHex (bb);
-  uint8_t broadcastAddress[] = {0xE8, 0x68, 0xE7, 0x2E, spair, opair};
+  uint8_t broadcastAddress[] = {0xE8, 0x68, 0xE7, 0x2E, 0x85, 0x24};
   Serial.println("Pair MAC 1 DEC: ");
   Serial.println(spair);
   Serial.println("Pair MAC 2 DEC: ");
